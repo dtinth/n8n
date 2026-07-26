@@ -3,6 +3,9 @@ name: 'CI: Pull Requests (Build, Test, Lint)'
 on:
   pull_request:
   merge_group:
+  push:
+    branches:
+      - 'spike/**'
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
@@ -11,7 +14,7 @@ concurrency:
 jobs:
   install-and-build:
     name: Install & Build
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest # spike: force vanilla GitHub runner (no RUNNER_PROVIDER var on fork)
     env:
       NODE_OPTIONS: '--max-old-space-size=7168'
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -192,7 +195,7 @@ jobs:
   typecheck:
     name: Typecheck
     if: needs.install-and-build.outputs.ci == 'true'
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest # spike: force vanilla GitHub runner (no RUNNER_PROVIDER var on fork)
     needs: install-and-build
     env:
       NODE_OPTIONS: --max-old-space-size=7168
@@ -217,7 +220,7 @@ jobs:
   check-packaging:
     name: Check packaging
     if: needs.install-and-build.outputs.ci == 'true'
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest # spike: force vanilla GitHub runner (no RUNNER_PROVIDER var on fork)
     needs: install-and-build
     steps:
       - uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1
@@ -394,7 +397,7 @@ jobs:
         workflow-scripts,
       ]
     if: always()
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest # spike: force vanilla GitHub runner (no RUNNER_PROVIDER var on fork)
     steps:
       - uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1
         with:
