@@ -1,0 +1,12 @@
+name: 'Spike: CI Actions Check'
+
+on:
+  push:
+    branches:
+      - 'spike/**'
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Actions is alive on the fork"
