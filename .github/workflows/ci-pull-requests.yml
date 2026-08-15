@@ -57,7 +57,7 @@ jobs:
           # spike: fork's own master is 7444 commits stale, so the default
           # base-ref resolution would diff against nearly the whole history.
           # Pin to the actual upstream commit this branch was merged against.
-          base-ref: ${{ github.event_name == 'push' && 'spike/ci-base' || '' }}
+          base-ref: ${{ github.event_name == 'push' && 'spike/ci-base-2' || '' }}
           filters: |
             ci:
               **
