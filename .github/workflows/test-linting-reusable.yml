@@ -21,13 +21,39 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest # spike: force vanilla GitHub runner (no RUNNER_PROVIDER var on fork)
+    # spike: raise well above the ~13min mark where prior runs died with
+    # "runner received a shutdown signal", to rule out a timeout as the cause.
+    timeout-minutes: 45
     steps:
       - uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1
         with:
           ref: ${{ inputs.ref }}
 
+      # spike: diagnostics for the mystery mid-run cutoff — dump memory/swap/OOM
+      # state every 15s so if it dies again we can see exactly what led up to it.
+      - name: Start diagnostics heartbeat
+        run: |
+          (while true; do
+            echo "=== heartbeat $(date -u +%FT%TZ) ==="
+            free -h
+            swapon --show 2>/dev/null || true
+            dmesg 2>/dev/null | grep -iE 'killed process|out of memory' | tail -3 || true
+            sleep 15
+          done) &
+          echo $! > /tmp/heartbeat.pid
+        shell: bash
+
       - name: Build and Test
         uses: ./.github/actions/setup-nodejs
         with:
-          build-command: pnpm lint:ci
+          # spike: scope to just nodes-base instead of the whole workspace (`pnpm
+          # lint:ci`) — most of the ~13min before the cutoff was spent building/
+          # linting ~30 unrelated packages, so nodes-base:lint never even started
+          # in the last run. This should reach it much sooner.
+          build-command: pnpm turbo run lint --filter=n8n-nodes-base --output-logs=full
           node-version: ${{ inputs.nodeVersion }}
+
+      - name: Stop diagnostics heartbeat
+        if: always()
+        run: kill "$(cat /tmp/heartbeat.pid)" 2>/dev/null || true
+        shell: bash
