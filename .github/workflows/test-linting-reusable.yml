@@ -49,8 +49,13 @@ jobs:
           # spike: scope to just nodes-base instead of the whole workspace (`pnpm
           # lint:ci`) — most of the ~13min before the cutoff was spent building/
           # linting ~30 unrelated packages, so nodes-base:lint never even started
-          # in the last run. This should reach it much sooner.
-          build-command: pnpm turbo run lint --filter=n8n-nodes-base --output-logs=full
+          # in the last run. This reached it, but then failed on "Failed to find
+          # methods to validate" — turbo's `lint` task only depends on `^build`
+          # (dependencies' builds), not the package's own; in the full workspace
+          # run nodes-base's own build gets pulled in incidentally as some other
+          # package's `^build` dependency, which `--filter` scoping loses. Build
+          # nodes-base explicitly too.
+          build-command: pnpm turbo run build lint --filter=n8n-nodes-base --output-logs=full
           node-version: ${{ inputs.nodeVersion }}
 
       - name: Stop diagnostics heartbeat
